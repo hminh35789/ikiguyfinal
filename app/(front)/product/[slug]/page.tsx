@@ -1,27 +1,42 @@
-'use client'
-
 import AddToCart from '@/components/products/AddtoCart'
 import data from '@/lib/data'
+import { convertDocToObj } from '@/lib/utils'
+import productService from '@/lib/services/productService'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 
-export default function ProductDetails({
+export async function generateMetadata({
   params,
 }: {
   params: { slug: string }
 }) {
-  const router = useRouter()
-  const product = data.products.find((x) => x.slug === params.slug)
+  const product = await productService.getBySlug(params.slug)
+  if (!product) {
+    return { title: 'Product not found' }
+  }
+  return {
+    title: `${product.name} | Ikiguy`,
+    description: product.description,
+  }
+}
+
+export default async function ProductDetails({
+  params,
+}: {
+  params: { slug: string }
+}) {
+  const product = await productService.getBySlug(params.slug)
+
   if (!product) {
     return <div>Product not found</div>
   }
   return (
     <>
-      <button className='font-semibold my-2' onClick={() => router.back()}>
+      {/* <button className='font-semibold my-2' onClick={() => router.back()}>
         Back to products
-      </button>
+      </button> */}
       <div className='grid md:grid-cols-4 md:gap-3'>
         <div className='md:col-span-2'>
           <Image
@@ -62,12 +77,17 @@ export default function ProductDetails({
               </div>
               <div className='mb-2 flex justify-between'>
                 <div>Status</div>
-                <div>{product.countInstock > 0 ? 'In stock' : 'Unavaible'}</div>
+                <div>{product.countInStock > 0 ? 'In stock' : 'Unavaible'}</div>
               </div>
-              {product.countInstock !== 0 && (
+              {product.countInStock !== 0 && (
                 <div className='card-actions justify-center'>
                   <AddToCart
-                    item={{ ...product, qty: 0, color: '', size: '' }}
+                    item={{
+                      ...convertDocToObj(product),
+                      qty: 0,
+                      color: '',
+                      size: '',
+                    }}
                   />
                 </div>
               )}
